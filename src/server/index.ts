@@ -1,27 +1,40 @@
 import express from 'express';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
-import { setupSocket } from './socket';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import cors from 'cors';
+import { setupSocket } from './socket';
 
-// Load the env file from the root
+// Load environment variables
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 
+// Enable CORS for client domain
+app.use(cors({
+  origin: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PATCH'],
+  credentials: true
+}));
+
+// Enable JSON parsing middleware
+app.use(express.json());
+
+// Initialize WebSocket server
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
     methods: ['GET', 'POST', 'PATCH'],
-    credentials:true
+    credentials: true
   }
 });
 
 setupSocket(io);
-app.get('/', (req, res) => {
+
+// Root route
+app.get('/', (_, res) => {
+  res.setHeader('Content-Type', 'text/html');
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -31,29 +44,31 @@ app.get('/', (req, res) => {
       <title>CollaborativeX Whiteboard API</title>
       <style>
         body {
-          margin: 0;
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          background: #f7f9fc;
-          color: #333;
+          background: #f3f4f6;
           display: flex;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
           flex-direction: column;
           height: 100vh;
+          color: #1f2937;
+          padding: 0 1rem;
         }
         h1 {
-          color: #4f46e5;
+          color: #7c3aed;
+          font-size: 2.5rem;
           margin-bottom: 0.5rem;
         }
         p {
-          margin: 0.2rem 0;
+          font-size: 1rem;
         }
         .info {
           margin-top: 1.5rem;
+          text-align: center;
         }
         a {
+          color: #7c3aed;
           text-decoration: none;
-          color: #4f46e5;
           font-weight: 500;
         }
       </style>
@@ -64,15 +79,16 @@ app.get('/', (req, res) => {
       <div class="info">
         <p>Status: ✅ Running</p>
         <p><a href="/home">Try /home route</a></p>
-        <p><a href="https://github.com/Ridham-Savaliya/colloboartivex-backend" target="_blank">View on GitHub</a></p>
+        <p><a href="https://github.com/Ridham-Savaliya/colloboartivex-backend" target="_blank">GitHub Repository</a></p>
       </div>
     </body>
     </html>
   `);
 });
 
-
-app.get("/home", (req, res) => {
+// Fancy /home route
+app.get("/home", (_, res) => {
+  res.setHeader('Content-Type', 'text/html');
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -87,11 +103,6 @@ app.get("/home", (req, res) => {
           --purple-light: #c4b5fd;
           --text: #f5f5f5;
         }
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
         body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           background: linear-gradient(145deg, var(--purple-dark), var(--purple));
@@ -102,24 +113,23 @@ app.get("/home", (req, res) => {
           justify-content: center;
           height: 100vh;
           text-align: center;
+          padding: 0 1rem;
         }
         h1 {
           font-size: 3rem;
-          margin-bottom: 1rem;
           color: var(--purple-light);
         }
         p {
           font-size: 1.2rem;
-          margin-bottom: 1.5rem;
           color: #e0d8f9;
+          margin: 1rem 0;
         }
         .badge {
           background-color: var(--text);
           color: var(--purple-dark);
-          font-weight: bold;
           padding: 0.5rem 1.2rem;
           border-radius: 30px;
-          font-size: 1rem;
+          font-weight: bold;
         }
         .links {
           margin-top: 2rem;
@@ -142,17 +152,20 @@ app.get("/home", (req, res) => {
       <div class="links">
         <a href="/">Go to Root</a>
         <a href="https://github.com/Ridham-Savaliya/colloboartivex-backend" target="_blank">GitHub</a>
-        <a href="/api/board">API</a>
+        <a href="/api/board">Board API</a>
       </div>
     </body>
     </html>
   `);
 });
 
+// Fallback route
+app.use((req, res) => {
+  res.status(404).send("404 Not Found – Invalid route.");
+});
 
-
+// Start the server
 const PORT = process.env.PORT || 3002;
-
 httpServer.listen(PORT, () => {
-  console.log(`WebSocket and Backend-server is running on port ${PORT}`)
+  console.log(`✅ CollaborativeX server running on port ${PORT}`);
 });

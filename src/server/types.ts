@@ -4,25 +4,29 @@ export interface WhiteboardElement {
   points: Array<{ x: number; y: number }>;
   color: string;
   lineWidth: number;
+  width?: number;
+  height?: number;
+  x?:number;
+  y?:number;
   shapeType?:
-    | 'rectangle'
-    | 'circle'
-    | 'line'
-    | 'triangle'
-    | 'diamond'
-    | 'star'
-    | 'arrowRight'
-    | 'arrowLeft'
-    | 'arrowUp'
-    | 'arrowDown'
-    | 'heart'
-    | 'pentagon'
-    | 'hexagon'
-    | 'heptagon'
-    | 'octagon'a
-    | 'cross'
-    | 'smiley'
-    | 'cloud';
+  | 'rectangle'
+  | 'circle'
+  | 'line'
+  | 'triangle'
+  | 'diamond'
+  | 'star'
+  | 'arrowRight'
+  | 'arrowLeft'
+  | 'arrowUp'
+  | 'arrowDown'
+  | 'heart'
+  | 'pentagon'
+  | 'hexagon'
+  | 'heptagon'
+  | 'octagon'
+  | 'cross'
+  | 'smiley'
+  | 'cloud';
   text?: string;
   fontSize?: number;
   fontFamily?: string;
@@ -44,7 +48,7 @@ export interface StickyNote {
 export interface ActivityUpdate {
   userId?: string; // Username or user ID
   email?: string; // Username or user ID
-  username?:string,
+  username?: string,
   action: string; // e.g., "drew a line", "added a sticky note"
   timestamp: string;
 }
