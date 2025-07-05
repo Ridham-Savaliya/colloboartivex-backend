@@ -19,7 +19,7 @@ export interface WhiteboardElement {
     | 'pentagon'
     | 'hexagon'
     | 'heptagon'
-    | 'octagon'a
+    | 'octagon'
     | 'cross'
     | 'smiley'
     | 'cloud';
