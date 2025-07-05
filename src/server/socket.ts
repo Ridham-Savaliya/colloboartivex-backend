@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
-import User from 'src/models/User';
-import Whiteboard from 'src/models/Whiteboard';
+import User from '../models/User';
+import Whiteboard from '../models/Whiteboard';
 import connectDB from '../lib/db';
 import { verifyToken } from '../lib/auth';
 import { WhiteboardElement, StickyNote, ActivityUpdate, UserPresence } from './types';

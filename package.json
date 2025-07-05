@@ -1,11 +1,12 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "type": "module",
+  "type": "commonjs",
   "main": "server.ts",
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
-    "build": "next build"
+    "build": "tsc --noEmitOnError false",
+    "start": "node dist/server/index.js"
   },
   "keywords": [],
   "author": "",
