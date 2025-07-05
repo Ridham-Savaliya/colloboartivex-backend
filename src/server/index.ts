@@ -22,7 +22,7 @@ const io = new Server(httpServer, {
 
 setupSocket(io);
 
-app.get('/', (req, res) => {
+app.get('/home', (req, res) => {
   res.send('Hello World');
 });
 

@@ -60,7 +60,7 @@ This is the **backend service** for a **real-time collaborative whiteboard** app
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/whiteboard-backend.git
+git clone https://github.com/Ridham-Savaliya/colloboartivex-backend.git
 cd whiteboard-backend
 ```
 

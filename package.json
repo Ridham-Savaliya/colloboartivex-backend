@@ -4,7 +4,8 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "dev": "tsx watch src/server/index.ts"
+    "dev": "tsx watch src/server/index.ts",
+    "build": "next build"
   },
   "keywords": [],
   "author": "",
