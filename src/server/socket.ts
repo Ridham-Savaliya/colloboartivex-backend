@@ -109,19 +109,18 @@ export const setupSocket = (io: Server) => {
         socket.on("stickyNoteUpdate", async (note: Partial<StickyNote>) => {
           if (!note.id) return;
           const fields: any = {};
-          (["content", "x", "y", "width", "height", "color"] as (keyof StickyNote)[]).forEach((key) => {
+          (["text", "x", "y", "width", "height", "color"] as (keyof StickyNote)[]).forEach((key) => {
             if (note[key] !== undefined) {
               fields[`stickyNotes.$.${key}`] = note[key];
             }
           });
 
-
           await Whiteboard.findOneAndUpdate(
-            { _id: whiteboardId, "stickyNotes.id": note.id },
+            { _id: whiteboardId, "stickyNotes.id": note.id }, 
             { $set: fields },
             { new: true }
           );
-          socket.to(room).emit("stickyNoteUpdated", note);
+          socket.to(room).emit("stickyNoteUpdate", note);
         });
 
         socket.on("stickyNoteDelete", async (id: string) => {

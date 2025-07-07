@@ -28,7 +28,7 @@ export interface IWhiteboard extends Document {
   }>;
   stickyNotes: Array<{
     id: string;
-    content: string;
+    text: string;
     x: number;
     y: number;
     width: number;

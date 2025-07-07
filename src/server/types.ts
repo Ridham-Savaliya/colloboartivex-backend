@@ -37,7 +37,7 @@ export interface WhiteboardElement {
 
 export interface StickyNote {
   id: string;
-  content: string;
+  text: string;
   x: number;
   y: number;
   width: number;
