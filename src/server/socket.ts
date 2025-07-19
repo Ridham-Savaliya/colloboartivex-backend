@@ -1,206 +1,47 @@
-import { Server, Socket } from "socket.io";
-import User from "../models/User";
-import Whiteboard from "../models/Whiteboard";
-import { verifyToken } from "../lib/auth";
-import connectDB from "../lib/db";
-import {
-  WhiteboardElement,
-  StickyNote,
-  ActivityUpdate,
-  UserPresence,
-} from "./types";
+import { Namespace, Socket } from 'socket.io';
+import { Server } from 'socket.io'; // Make sure Server is imported
 
-export const setupSocket = (io: Server) => {
-  io.on("connection", async (socket: Socket) => {
-    console.log("🔌 New connection:", socket.id);
+export const setupSocket = (namespace: Namespace, io: Server) => { // 'io' parameter is important
+    namespace.on('connection', (socket) => {
+        console.log(`[SERVER DEBUG] New collaborate socket connected: ${socket.id} at ${new Date().toISOString()}`);
 
-    const token = socket.handshake.auth.token;
-    if (!token || typeof token !== "string") {
-      console.warn("❌ Missing or invalid token");
-      socket.disconnect();
-      return;
-    }
-
-    let email = "", userId = "", username = "";
-    try {
-      const decoded = verifyToken(token);
-      email = decoded.email;
-      userId = decoded.userId;
-      username = decoded.name;
-      socket.data.user = { email, userId, username };
-    } catch (err) {
-      console.error("❌ Token verification failed", err);
-      socket.disconnect();
-      return;
-    }
-
-    // Join room
-    socket.on("join_whiteboard", async (whiteboardId: string) => {
-      try {
-        await connectDB();
-
-        const whiteboard = await Whiteboard.findById(whiteboardId);
-        if (!whiteboard) {
-          socket.emit("error", { message: "Whiteboard not found" });
-          return;
-        }
-
-        const isOwner = whiteboard.owner.toString() === userId;
-        const isCollaborator = whiteboard.collaborators.includes(email);
-        if (!isOwner && !isCollaborator) {
-          socket.emit("error_unauthorized", { message: "Unauthorized access" });
-          return;
-        }
-
-        const user = await User.findById(userId).select("name");
-        if (!user) {
-          socket.emit("error_user_not_found", { message: "User not found" });
-          return;
-        }
-
-        const room = `whiteboard_${whiteboardId}`;
-        socket.join(room);
-        socket.data.room = room;
-
-        const presence: UserPresence = { email, username, joined: true };
-        socket.to(room).emit("user_presence", presence);
-
-        socket.emit("initial_state", {
-          elements: whiteboard.elements || [],
-          stickyNotes: whiteboard.stickyNotes || [],
-        });
-
-        const activity = (action: string): ActivityUpdate => ({
-          userId,
-          username,
-          action,
-          timestamp: new Date().toISOString(),
-        });
-
-        // Drawing Events
-        socket.on("drawStart", async (element: WhiteboardElement) => {
-          await Whiteboard.findByIdAndUpdate(whiteboardId, { $push: { elements: element } });
-          socket.to(room).emit("drawStart", element);
-          io.to(room).emit("activity_update", activity(`started drawing a ${element.type}`));
-        });
-
-        socket.on("drawUpdate", (element: WhiteboardElement) => {
-          socket.to(room).emit("drawUpdate", element);
-        });
-
-        socket.on("drawEnd", async (element: WhiteboardElement) => {
-          await Whiteboard.findByIdAndUpdate(whiteboardId, {
-            $pull: { elements: { id: element.id } },
-          });
-          await Whiteboard.findByIdAndUpdate(whiteboardId, {
-            $push: { elements: element },
-          });
-          socket.to(room).emit("drawEnd", element);
-          io.to(room).emit("activity_update", activity(`finished drawing a ${element.type}`));
-        });
-
-        // Sticky Notes
-        socket.on("stickyNoteCreate", async (note: StickyNote) => {
-          await Whiteboard.findByIdAndUpdate(whiteboardId, { $push: { stickyNotes: note } });
-          socket.to(room).emit("stickyNoteCreate", note);
-          io.to(room).emit("activity_update", activity("created a sticky note"));
-        });
-
-        socket.on("stickyNoteUpdate", async (note: Partial<StickyNote>) => {
-          if (!note.id) return;
-          const fields: any = {};
-          (["text", "x", "y", "width", "height", "color"] as (keyof StickyNote)[]).forEach((key) => {
-            if (note[key] !== undefined) {
-              fields[`stickyNotes.$.${key}`] = note[key];
+        socket.on('join-collaborateRoom', ({ roomId, userId }) => {
+            if (!roomId || !userId) {
+                console.error(`[SERVER DEBUG] Invalid join-collaborateRoom data: roomId=${roomId}, userId=${userId}`);
+                return;
             }
-          });
+            console.log(`[SERVER DEBUG] User ${userId} joining collaborate room ${roomId} with socket ${socket.id}`);
+            socket.join(roomId);
+            namespace.to(roomId).emit('user-joined', userId);
+            console.log(`[SERVER DEBUG] Broadcasted user-joined for ${userId} in collaborate room ${roomId}`);
 
-          await Whiteboard.findOneAndUpdate(
-            { _id: whiteboardId, "stickyNotes.id": note.id }, 
-            { $set: fields },
-            { new: true }
-          );
-          socket.to(room).emit("stickyNoteUpdate", note);
+            // Removed: Video room sync logic. The video client handles its own join.
         });
 
-        socket.on("stickyNoteDelete", async (id: string) => {
-          await Whiteboard.findByIdAndUpdate(whiteboardId, {
-            $pull: { stickyNotes: { id } },
-          });
-          socket.to(room).emit("stickyNoteDelete", id);
-          io.to(room).emit("activity_update", activity("deleted a sticky note"));
+        socket.on('leave-collaborateRoom', ({ roomId, userId }) => {
+            console.log(`[SERVER DEBUG] User ${userId} leaving collaborate room ${roomId} with socket ${socket.id}`);
+            socket.leave(roomId);
+            namespace.to(roomId).emit('user-left', userId);
+            console.log(`[SERVER DEBUG] Broadcasted user-left for ${userId} in collaborate room ${roomId}`);
+
+            // Removed: Video room sync logic. The video client handles its own end-call.
         });
 
-        // Text and Shape
-        socket.on("textCreate", async (el: WhiteboardElement) => {
-          await Whiteboard.findByIdAndUpdate(whiteboardId, { $push: { elements: el } });
-          socket.to(room).emit("textCreate", el);
-          io.to(room).emit("activity_update", activity("added text"));
-        });
+        socket.on('disconnect', () => {
+            console.log(`[SERVER DEBUG] Collaborate socket disconnected: ${socket.id} at ${new Date().toISOString()}`);
+            const rooms = socket.rooms;
+            rooms.forEach((roomId) => {
+                if (roomId !== socket.id) {
+                    // Note: This emits the socket.id, not userId.
+                    // If you need userId here, you'd need to store it on `socket.data` in this namespace too.
+                    namespace.to(roomId).emit('user-left', socket.id);
+                    console.log(`[SERVER DEBUG] Broadcasted user-left for ${socket.id} in room ${roomId}`);
 
-        socket.on("textUpdate", async (el: Partial<WhiteboardElement>) => {
-          await Whiteboard.findOneAndUpdate(
-            { _id: whiteboardId, "elements.id": el.id },
-            {
-              $set: {
-                "elements.$.text": el.text,
-                "elements.$.x": el.x,
-                "elements.$.y": el.y,
-                "elements.$.color": el.color,
-              },
-            },
-            { new: true }
-          );
-          socket.to(room).emit("textUpdate", el);
-          io.to(room).emit("activity_update", activity("updated text"));
+                    // Removed: Video room sync logic. The video client's disconnect handler will manage this.
+                }
+            });
         });
-
-        socket.on("shapeUpdate", async (el: Partial<WhiteboardElement>) => {
-          await Whiteboard.findOneAndUpdate(
-            { _id: whiteboardId, "elements.id": el.id },
-            {
-              $set: {
-                "elements.$.x": el.x,
-                "elements.$.y": el.y,
-                "elements.$.width": el.width,
-                "elements.$.height": el.height,
-                "elements.$.color": el.color,
-                "elements.$.lineWidth": el.lineWidth,
-              },
-            },
-            { new: true }
-          );
-          socket.to(room).emit("shapeUpdate", el);
-          io.to(room).emit("activity_update", activity("updated a shape"));
-        });
-
-        // Cursor
-        socket.on("cursorMove", ({ x, y }: { x: number; y: number }) => {
-          socket.to(room).emit("cursorMove", { socketId: socket.id, username, x, y });
-        });
-
-        // Ping (Latency Check)
-        socket.on("ping", (timestamp: number) => {
-          socket.emit("pong", timestamp);
-        });
-
-      } catch (err) {
-        console.error("Error joining whiteboard:", err);
-        socket.emit("error", { message: "Something went wrong joining whiteboard" });
-      }
     });
-
-    socket.on("disconnect", () => {
-      const room = socket.data.room;
-      if (room && socket.data.user?.username) {
-        const presence: UserPresence = {
-          email: socket.data.user.email,
-          username: socket.data.user.username,
-          joined: false,
-        };
-        socket.to(room).emit("user_presence", presence);
-        console.log(`❌ ${socket.data.user.username} disconnected from ${room}`);
-      }
-    });
-  });
 };
+
+export default setupSocket;
