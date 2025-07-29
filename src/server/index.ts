@@ -107,6 +107,16 @@ app.get("/home", (_, res) => {
   `);
 });
 
+app.get('/health', (_, res) => {
+  res.send('OK');
+});
+
+setInterval(() => {
+  fetch('https://your-app-name.onrender.com/health')
+    .then(() => console.log('🔁 Self-ping successful'))
+    .catch(() => console.log('❌ Self-ping failed'));
+}, 5 * 60 * 1000); // every 5 minutes
+
 // Fallback route
 app.use((req, res) => {
   res.status(404).send("404 Not Found – Invalid route.");
