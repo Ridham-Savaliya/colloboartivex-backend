@@ -113,7 +113,7 @@ app.use((req, res) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`✅ CollaborativeX server running on port ${PORT}`);
 });
