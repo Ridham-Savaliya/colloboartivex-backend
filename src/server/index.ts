@@ -112,7 +112,7 @@ app.get('/health', (_, res) => {
 });
 
 setInterval(() => {
-  fetch('https://your-app-name.onrender.com/health')
+  fetch('https://collaboartivex-backend-jb9j.onrender.com/health')
     .then(() => console.log('🔁 Self-ping successful'))
     .catch(() => console.log('❌ Self-ping failed'));
 }, 5 * 60 * 1000); // every 5 minutes
