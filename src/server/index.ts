@@ -108,11 +108,11 @@ app.get("/home", (_, res) => {
 });
 
 app.get('/health', (_, res) => {
-  res.send('OK');
+  res.send('OK this is regular health check api route to warm out server on render to protect it from cold start❄️😅');
 });
 
 setInterval(() => {
-  fetch('https://collaboartivex-backend-jb9j.onrender.com/health')
+  fetch('https://collaborativex-api.onrender.com/health')
     .then(() => console.log('🔁 Self-ping successful'))
     .catch(() => console.log('❌ Self-ping failed'));
 }, 5 * 60 * 1000); // every 5 minutes
