@@ -272,7 +272,7 @@ export const setupWhiteboard = (whiteboardNamespace: Namespace) => {
         const kanbanBoard = await KanbanBoard.findOne({ whiteboard: whiteboardId });
         console.log(`[Kanban] Found board for ${whiteboardId}:`, !!kanbanBoard);
         
-        let columnsData = null;
+        let columnsData:any = null;
         let success = false;
 
         if (kanbanBoard && kanbanBoard.columns) {
@@ -341,7 +341,7 @@ export const setupWhiteboard = (whiteboardNamespace: Namespace) => {
           userCount
         });
 
-      } catch (error) {
+      } catch (error:any) {
         console.error(`[Kanban] Error joining kanban room:`, error);
         socket.emit("kanban-error", { 
           message: "Failed to join kanban board",
@@ -444,7 +444,7 @@ export const setupWhiteboard = (whiteboardNamespace: Namespace) => {
           timestamp: Date.now()
         });
 
-      } catch (error) {
+      } catch (error:any) {
         console.error(`[Kanban] Error updating board ${whiteboardId}:`, error);
         
         // Send detailed error back to the client that made the update
