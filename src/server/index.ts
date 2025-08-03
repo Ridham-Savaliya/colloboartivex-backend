@@ -107,6 +107,16 @@ app.get("/home", (_, res) => {
   `);
 });
 
+app.get('/health', (_, res) => {
+  res.send('OK this is regular health check api route to warm out server on render to protect it from cold start❄️😅');
+});
+
+setInterval(() => {
+  fetch('https://collaborativex-api.onrender.com/health')
+    .then(() => console.log('🔁 Self-ping successful'))
+    .catch(() => console.log('❌ Self-ping failed'));
+}, 16 * 60 * 1000); // every 5 minutes
+
 // Fallback route
 app.use((req, res) => {
   res.status(404).send("404 Not Found – Invalid route.");
