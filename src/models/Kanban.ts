@@ -1,135 +1,132 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
-const TaskSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  content: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  createdAt: {
-    type: String,
-    required: true,
-    default: () => new Date().toISOString()
-  },
-  priority: {
-    type: String,
-    enum: ['low', 'medium', 'high'],
-    default: 'medium'
-  },
-  tags: [{
-    type: String,
-    trim: true
-  }]
-}, {
-  _id: false // Disable automatic _id for subdocuments
-});
+export interface ITask {
+  id: string;
+  content: string;
+  createdAt: string;
+  priority: 'low' | 'medium' | 'high';
+  tags: string[];
+}
 
-const ColumnSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    required: true
-  },
-  title: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  color: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  tasks: {
-    type: [TaskSchema],
-    default: []
-  }
-}, {
-  _id: false // Disable automatic _id for subdocuments
-});
+export interface IColumn {
+  id: string;
+  title: string;
+  color: string;
+  tasks: ITask[];
+}
 
-const KanbanBoardSchema = new mongoose.Schema({
-  whiteboard: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true
+export interface IKanbanBoard extends Document {
+  whiteboard: string;
+  columns: Map<string, IColumn>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const TaskSchema = new Schema<ITask>(
+  {
+    id: { type: String, required: true, unique: true },
+    content: { type: String, required: true, trim: true },
+    createdAt: {
+      type: String,
+      required: true,
+      default: () => new Date().toISOString(),
+    },
+    priority: {
+      type: String,
+      enum: ['low', 'medium', 'high'],
+      default: 'medium',
+    },
+    tags: [{ type: String, trim: true }],
   },
-  columns: {
-    type: Map,
-    of: ColumnSchema,
-    required: true,
-    validate: {
-      validator: function(columnsMap: Map<string, any>) {
-        // Ensure we have the required columns
-        const requiredColumns = ['todo', 'inProgress', 'done'];
-        return requiredColumns.every(colId => columnsMap.has(colId));
+  { _id: false }
+);
+
+const ColumnSchema = new Schema<IColumn>(
+  {
+    id: { type: String, required: true },
+    title: { type: String, required: true, trim: true },
+    color: { type: String, required: true, trim: true },
+    tasks: { type: [TaskSchema], default: [] },
+  },
+  { _id: false }
+);
+
+const KanbanBoardSchema = new Schema<IKanbanBoard>(
+  {
+    whiteboard: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true, // Only declare index once
+    },
+    columns: {
+      type: Map,
+      of: ColumnSchema,
+      required: true,
+      validate: {
+        validator: (columns: Map<string, IColumn>) => {
+          const required = ['todo', 'inProgress', 'done'];
+          return required.every((col) => columns.has(col));
+        },
+        message: 'Kanban board must have todo, inProgress, and done columns',
       },
-      message: 'Kanban board must have todo, inProgress, and done columns'
-    }
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    index: true
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-    index: true
+  {
+    timestamps: false, // manually handled
   }
-}, {
-  timestamps: false // We handle timestamps manually
-});
+);
 
-// Indexes for better query performance
-KanbanBoardSchema.index({ whiteboard: 1 });
+// Avoid duplicate index declarations
+// Only declare once for each field
 KanbanBoardSchema.index({ updatedAt: -1 });
 
-// Update the updatedAt field before saving
-KanbanBoardSchema.pre('save', function(next: any) {
+// Middleware to auto-update `updatedAt`
+KanbanBoardSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
 
-// Update the updatedAt field before updating
-KanbanBoardSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function(next: any) {
+KanbanBoardSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function (next) {
   this.set({ updatedAt: new Date() });
   next();
 });
 
-// Static method to safely convert Map to Object for JSON serialization
-KanbanBoardSchema.statics.convertMapToObject = function(columnsMap: Map<string, any>) {
-  if (!columnsMap || !(columnsMap instanceof Map)) {
-    return null;
-  }
-  
+// Helpers for safe conversion
+KanbanBoardSchema.statics.convertMapToObject = function (
+  columnsMap: Map<string, IColumn>
+): Record<string, IColumn> | null {
+  if (!(columnsMap instanceof Map)) return null;
   try {
     return Object.fromEntries(columnsMap);
-  } catch (error) {
-    console.error('Error converting Map to Object:', error);
+  } catch (err) {
+    console.error("Error converting Map to Object:", err);
     return null;
   }
 };
 
-// Static method to safely convert Object to Map for MongoDB storage
-KanbanBoardSchema.statics.convertObjectToMap = function(columnsObj: Record<string, any>) {
-  if (!columnsObj || typeof columnsObj !== 'object') {
-    return null;
-  }
-  
+KanbanBoardSchema.statics.convertObjectToMap = function (
+  columnsObj: Record<string, IColumn>
+): Map<string, IColumn> | null {
+  if (!columnsObj || typeof columnsObj !== 'object') return null;
   try {
     return new Map(Object.entries(columnsObj));
-  } catch (error) {
-    console.error('Error converting Object to Map:', error);
+  } catch (err) {
+    console.error("Error converting Object to Map:", err);
     return null;
   }
 };
 
-const KanbanBoard = mongoose.model('KanbanBoard', KanbanBoardSchema);
+const KanbanBoard: Model<IKanbanBoard> = mongoose.model('KanbanBoard', KanbanBoardSchema);
 
 export default KanbanBoard;
