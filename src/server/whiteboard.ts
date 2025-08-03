@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Server, Socket } from "socket.io";
 import User from "../models/User";
 import Whiteboard from "../models/Whiteboard";

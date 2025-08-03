@@ -5,7 +5,7 @@
   "main": "server.ts",
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
-    "build": "tsc --noEmitOnError false",
+    "build": "tsc --skipLibCheck",
     "start": "node dist/server/index.js"
   },
   "keywords": [],

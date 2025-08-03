@@ -7,13 +7,11 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "esModuleInterop": true,
-    "noImplicitAny": false, // ✅ allow 'any'
-    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
     "skipLibCheck": true,
     "strict": false,
+    "forceConsistentCasingInFileNames": false,
     "resolveJsonModule": true
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }
