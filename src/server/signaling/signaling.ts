@@ -64,19 +64,19 @@ interface RoomData {
 }
 
 /**
- * FULLY DEBUGGED Video Signaling Server
+ * 🔧 FIXED: Video Signaling Server with Bug Fixes
  * 
- * This implementation fixes all reported issues:
- * 1. ✅ Proper call termination for users
- * 2. ✅ Notifications when participants leave
- * 3. ✅ Automatic page reload after call end
- * 4. ✅ Complete media cleanup for call owners
+ * Bug Fixes Applied:
+ * ✅ Bug #1: Fixed call termination - only owner can end call for everyone, participants can leave individually
+ * ✅ Bug #2: Enhanced notification system for owner when users leave/reject calls
+ * ✅ Bug #3: Proper call timeout handling and notifications
  */
 export default function setUpVideoSignalling(io: Server) {
   const videoNamespace: Namespace = io.of('/video');
   const activeCalls = new Map<string, RoomData>();
   const userSocketMap = new Map<string, string>();
   const userMetadata = new Map<string, { username: string }>();
+  const callTimeouts = new Map<string, NodeJS.Timeout>(); // 🔧 FIX: Call timeout tracking
 
   videoNamespace.on('connection', (socket: Socket) => {
     console.log(`[video] Socket connected: ${socket.id}`);
@@ -163,6 +163,26 @@ export default function setUpVideoSignalling(io: Server) {
                   isInvite: true,
                   isOwner: fromUserId === roomData.owner
                 });
+
+                // 🔧 FIX Bug #3: Set timeout for call acceptance
+                const timeoutKey = `${roomId}-${userId}`;
+                const timeout = setTimeout(() => {
+                  // Notify owner about timeout
+                  const ownerSocketId = userSocketMap.get(roomData.owner);
+                  if (ownerSocketId) {
+                    const ownerSocket = videoNamespace.sockets.get(ownerSocketId);
+                    if (ownerSocket) {
+                      const username = userMetadata.get(userId)?.username || userId;
+                      ownerSocket.emit('call-notification', {
+                        message: `${username} didn't accept the call`,
+                        type: 'info'
+                      });
+                    }
+                  }
+                  callTimeouts.delete(timeoutKey);
+                }, 30000); // 30 second timeout
+
+                callTimeouts.set(timeoutKey, timeout);
               }
             }
           });
@@ -212,6 +232,26 @@ export default function setUpVideoSignalling(io: Server) {
                 isInvite: false,
                 isOwner: true // fromUserId is the owner
               });
+
+              // 🔧 FIX Bug #3: Set timeout for call acceptance
+              const timeoutKey = `${roomId}-${userId}`;
+              const timeout = setTimeout(() => {
+                // Notify owner about timeout
+                const ownerSocketId = userSocketMap.get(fromUserId);
+                if (ownerSocketId) {
+                  const ownerSocket = videoNamespace.sockets.get(ownerSocketId);
+                  if (ownerSocket) {
+                    const username = userMetadata.get(userId)?.username || userId;
+                    ownerSocket.emit('call-notification', {
+                      message: `${username} didn't accept the call`,
+                      type: 'info'
+                    });
+                  }
+                }
+                callTimeouts.delete(timeoutKey);
+              }, 30000); // 30 second timeout
+
+              callTimeouts.set(timeoutKey, timeout);
             }
           }
         });
@@ -226,7 +266,7 @@ export default function setUpVideoSignalling(io: Server) {
       }
     });
 
-    // Enhanced call acceptance
+    // Enhanced call acceptance with timeout clearing
     socket.on('accept-call', ({ roomId, userId, fromUserId }: AcceptCallPayload) => {
       try {
         const roomData = activeCalls.get(roomId);
@@ -236,6 +276,13 @@ export default function setUpVideoSignalling(io: Server) {
             type: 'info' 
           });
           return;
+        }
+
+        // 🔧 FIX Bug #3: Clear timeout when call is accepted
+        const timeoutKey = `${roomId}-${userId}`;
+        if (callTimeouts.has(timeoutKey)) {
+          clearTimeout(callTimeouts.get(timeoutKey)!);
+          callTimeouts.delete(timeoutKey);
         }
 
         roomData.participants.add(userId);
@@ -285,13 +332,33 @@ export default function setUpVideoSignalling(io: Server) {
       }
     });
 
-    // Enhanced call rejection
+    // 🔧 FIX Bug #3: Enhanced call rejection with owner notification
     socket.on('reject-call', ({ roomId, userId, fromUserId }: RejectCallPayload) => {
       try {
         const roomData = activeCalls.get(roomId);
         if (roomData) {
           roomData.participants.delete(userId);
           roomData.mediaStates.delete(userId);
+
+          // 🔧 FIX Bug #3: Clear timeout when call is rejected
+          const timeoutKey = `${roomId}-${userId}`;
+          if (callTimeouts.has(timeoutKey)) {
+            clearTimeout(callTimeouts.get(timeoutKey)!);
+            callTimeouts.delete(timeoutKey);
+          }
+
+          // 🔧 FIX Bug #3: Notify owner about rejection
+          const ownerSocketId = userSocketMap.get(roomData.owner);
+          if (ownerSocketId) {
+            const ownerSocket = videoNamespace.sockets.get(ownerSocketId);
+            if (ownerSocket) {
+              const username = userMetadata.get(userId)?.username || userId;
+              ownerSocket.emit('call-notification', {
+                message: `${username} rejected the call`,
+                type: 'info'
+              });
+            }
+          }
         }
 
         const callerSocketId = userSocketMap.get(fromUserId);
@@ -341,7 +408,7 @@ export default function setUpVideoSignalling(io: Server) {
       }
     });
 
-    // 🔧 CRITICAL FIX: Enhanced call ending - addresses Bug #1 and #4
+    // 🔧 FIX Bug #1: Enhanced end-call - ONLY OWNER can end call for everyone
     socket.on('end-call', ({ roomId, userId }: EndCallPayload) => {
       try {
         const roomData = activeCalls.get(roomId);
@@ -353,33 +420,27 @@ export default function setUpVideoSignalling(io: Server) {
           return;
         }
 
-        const isOwner = roomData.owner === userId;
-        const isLastParticipant = roomData.participants.size <= 1;
-        
-        // Only owner can end call for everyone, unless they're the last participant
-        if (!isOwner && !isLastParticipant) {
+        // 🔧 FIX Bug #1: Only owner can end call for everyone
+        if (roomData.owner !== userId) {
           socket.emit('call-notification', { 
-            message: 'Only the call owner can end the call for everyone. Use "Leave Call" to leave.', 
+            message: 'Only the call owner can end the call for everyone. Use "Leave Call" to leave individually.', 
             type: 'warning' 
           });
           return;
         }
 
-        const reason = isLastParticipant ? 'EMPTY_ROOM' : 'ENDED_BY_OWNER';
-        const message = isLastParticipant ? 
-          'Call ended - no participants remaining' : 
-          'Call ended by the host';
+        const message = 'Call ended by the host';
 
-        // 🔧 FIX: Notify ALL participants that call is ending (addresses Bug #2)
+        // Notify ALL participants that call is ending
         videoNamespace.to(roomId).emit('call-ended-by-owner', {
-          reason,
+          reason: 'ENDED_BY_OWNER',
           message,
           endedBy: userMetadata.get(userId)?.username || userId
         });
 
         // Clean up the call
         activeCalls.delete(roomId);
-        console.log(`[video] Call ended by ${userId} in room ${roomId} (reason: ${reason})`);
+        console.log(`[video] Call ended by owner ${userId} in room ${roomId}`);
       } catch (error) {
         console.error(`[video] Error ending call:`, error);
         socket.emit('call-notification', { 
@@ -389,7 +450,7 @@ export default function setUpVideoSignalling(io: Server) {
       }
     });
 
-    // 🔧 CRITICAL FIX: Separate leave-call for participants (addresses Bug #1)
+    // 🔧 FIX Bug #1: Separate leave-call for individual participants
     socket.on('leave-call', ({ roomId, userId }: LeaveCallPayload) => {
       try {
         const roomData = activeCalls.get(roomId);
@@ -400,7 +461,20 @@ export default function setUpVideoSignalling(io: Server) {
         roomData.participants.delete(userId);
         roomData.mediaStates.delete(userId);
 
-        // 🔧 FIX: Notify others about user leaving (addresses Bug #2)
+        // 🔧 FIX Bug #3: Notify owner when user leaves
+        const ownerSocketId = userSocketMap.get(roomData.owner);
+        if (ownerSocketId && userId !== roomData.owner) {
+          const ownerSocket = videoNamespace.sockets.get(ownerSocketId);
+          if (ownerSocket) {
+            const username = userMetadata.get(userId)?.username || userId;
+            ownerSocket.emit('call-notification', {
+              message: `${username} has left the call`,
+              type: 'info'
+            });
+          }
+        }
+
+        // Notify others about user leaving
         socket.to(roomId).emit('user-left-call', { 
           userId,
           username: userMetadata.get(userId)?.username || userId
@@ -415,7 +489,6 @@ export default function setUpVideoSignalling(io: Server) {
             'Call ended because the host left' : 
             'Call ended - no participants remaining';
 
-          // 🔧 FIX: Proper notification to remaining participants (addresses Bug #3)
           videoNamespace.to(roomId).emit('call-ended-by-owner', {
             reason,
             message,
@@ -459,6 +532,14 @@ export default function setUpVideoSignalling(io: Server) {
 
         if (userId) {
           userSocketMap.delete(userId);
+          
+          // Clear any pending timeouts for this user
+          for (const [key, timeout] of callTimeouts.entries()) {
+            if (key.includes(userId)) {
+              clearTimeout(timeout);
+              callTimeouts.delete(key);
+            }
+          }
         }
 
         if (roomId && userId) {
@@ -467,7 +548,19 @@ export default function setUpVideoSignalling(io: Server) {
             roomData.participants.delete(userId);
             roomData.mediaStates.delete(userId);
 
-            // 🔧 FIX: Notify about disconnection (addresses Bug #2)
+            // 🔧 FIX Bug #3: Notify owner when user disconnects
+            const ownerSocketId = userSocketMap.get(roomData.owner);
+            if (ownerSocketId && userId !== roomData.owner) {
+              const ownerSocket = videoNamespace.sockets.get(ownerSocketId);
+              if (ownerSocket) {
+                const username = userMetadata.get(userId)?.username || userId;
+                ownerSocket.emit('call-notification', {
+                  message: `${username} has left the call`,
+                  type: 'info'
+                });
+              }
+            }
+
             socket.to(roomId).emit('user-left-call', { 
               userId,
               username: userMetadata.get(userId)?.username || userId
@@ -482,7 +575,6 @@ export default function setUpVideoSignalling(io: Server) {
                 'Call ended because the host disconnected' : 
                 'Call ended - no participants remaining';
 
-              // 🔧 FIX: Proper end call notification (addresses Bug #3)
               videoNamespace.to(roomId).emit('call-ended-by-owner', {
                 reason,
                 message,
@@ -503,6 +595,12 @@ export default function setUpVideoSignalling(io: Server) {
 
   // Cleanup function
   const cleanup = () => {
+    // Clear all timeouts
+    for (const timeout of callTimeouts.values()) {
+      clearTimeout(timeout);
+    }
+    callTimeouts.clear();
+    
     activeCalls.clear();
     userSocketMap.clear();
     userMetadata.clear();
