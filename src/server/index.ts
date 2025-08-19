@@ -18,7 +18,7 @@ app.use(cors({
   origin: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PATCH'],
   credentials: true
-}));
+}));  
 
 app.use('/ice-config', require('./routes/ice-config')); // Note: This line still uses require due to mixed module types
 
