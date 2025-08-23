@@ -111,16 +111,20 @@ app.get('/health', (_, res) => {
   res.send('OK this is regular health check api route to warm out server on render to protect it from cold start❄️😅');
 });
 
- setInterval(async () => {
-      try {
-        const res:any = await fetch(`https://collaborativex-whiteboard.vercel.app/api/healthcheck`);
-        const data = await res.json()
-        console.log('main-app health-check✅:',data);
-        
-      } catch (err) {
-        console.error("Keep-alive failed:", err);
-      }
-    }, 10 * 60 * 1000); // 10 minutes
+setInterval(async () => {
+  try {
+    const res = await fetch("https://collaborativex-whiteboard.vercel.app/api/healthcheck", {
+      cache: "no-store" // ensures fresh response
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    
+    const data = await res.json();
+    console.log("main-app health-check ✅:", data);
+  } catch (err) {
+    console.error("Keep-alive failed ❌:", err);
+  }
+}, 5 * 60 * 1000); // 10 minutes
+
 
 
 // Fallback route
