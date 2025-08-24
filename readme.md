@@ -1,148 +1,64 @@
-# 🧠 Collaborative Whiteboard Backend
+<div align="center">
 
-This is the **backend service** for a **real-time collaborative whiteboard** application. It enables **multiple users to collaborate simultaneously** using advanced features like:
+# 🟣 CollaborativeX Backend 🟣
 
-- ✍️ Real-time drawing and whiteboard synchronization
-- 📹 Video calling
-- 🧠 AI features (e.g. shape recognition)
-- ✉️ Email invitations to collaborators
-- 📡 WebSocket-powered bi-directional communication
+### ✨ *Powering Real-Time Collaboration with Intelligence and Speed* ✨
 
----
+</div>
 
-## 🚀 Features
-
-- 🔄 **Real-time Sync:** Seamless updates across all users via WebSockets
-- 👥 **Multi-user Collaboration:** Multiple users can draw and interact on the same board
-- 📞 **Video Calling Integration:** Peer-to-peer communication support
-- 🧠 **AI Enhancements:** Shape detection and future AI-assisted drawing tools
-- ✉️ **Email Invitations:** Send invitation links via email using NodeMailer
-- 🔒 **Secure Architecture:** Robust user validation, room access control
-- 💪 **Scalable Design:** Built for performance and flexibility
+> This is the backend powerhouse for **CollaborativeX**, a feature-rich, real-time collaborative whiteboard application designed for seamless teamwork and creativity. This repository contains the complete server-side solution, engineered to deliver a robust and scalable experience for interactive drawing, video communication, and intelligent productivity features.
 
 ---
 
-## 🧪 Tech Stack
+## 🚀 Core Features
 
-| Category       | Technology         |
-| -------------- | ------------------ |
-| Language       | TypeScript         |
-| Runtime        | Node.js            |
-| Framework      | Express.js         |
-| Realtime Layer | WebSockets (ws)    |
-| Database       | MongoDB + Mongoose |
-| Email Service  | NodeMailer         |
-| Others         | Dotenv, CORS, etc. |
+This backend is more than just a synchronization service; it's a comprehensive platform built to support a dynamic and engaging collaborative environment.
+
+-   ✍️ **Real-Time Whiteboard Synchronization**: At its core, the backend uses **Socket.IO** to provide instantaneous, low-latency updates for all whiteboard activities. Whether it's drawing, adding sticky notes, or manipulating shapes, every action is seamlessly broadcast to all participants.
+
+-   👥 **Seamless Multi-User Collaboration**: Built from the ground up to support teams, the system allows multiple users to join a shared session, see each other's cursors in real-time, and contribute to the same canvas simultaneously.
+
+-   📹 **Integrated Video Calling**: Go beyond drawing with built-in video communication. The backend includes a dedicated signaling server using **WebRTC** principles to facilitate peer-to-peer connections, allowing collaborators to talk face-to-face without leaving the whiteboard.
+
+-   🧠 **Intelligent Productivity Modules**:
+    -   **Kanban Boards**: Organize tasks and workflows directly on your whiteboard with a fully integrated Kanban board module, complete with draggable cards and customizable columns.
+    -   **Mind Mapping**: Brainstorm and structure ideas with a dynamic mind mapping tool, allowing you to create and connect nodes in real-time.
+
+-   🔒 **Secure & Authenticated Access**: User interactions are secured through **JWT (JSON Web Token)** verification for all socket connections, ensuring that only authorized users can join and contribute to a whiteboard session.
+
+-   💾 **Persistent Storage**: All whiteboard content—including drawings, notes, Kanban boards, and mind maps—is saved to a **MongoDB** database, allowing you to return to your work at any time.
 
 ---
 
-## 📁 Project Structure
+## 🛠️ Technology Stack
 
-```
-├── src/
-│   ├── controllers/       # Route logic
-│   ├── routes/            # API route handlers
-│   ├── sockets/           # WebSocket event handling
-│   ├── models/            # Mongoose schemas
-│   ├── utils/             # Utility functions (e.g., email sender)
-│   ├── config/            # Environment and DB setup
-│   ├── index.ts           # Entry point
-├── .env
-├── package.json
-├── tsconfig.json
-└── README.md
-```
+This project is built with a modern, scalable, and efficient technology stack, chosen to handle the demands of real-time applications.
+
+| Category                  | Technology                                  | Description                                                                                             |
+| ------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Core Language** | **TypeScript** | Ensures type safety and improves code quality and maintainability.                                      |
+| **Runtime Environment** | **Node.js** | Provides a fast and efficient JavaScript runtime for building server-side applications.                 |
+| **Web Framework** | **Express.js** | A minimal and flexible framework for building robust APIs and handling HTTP requests.                   |
+| **Real-Time Communication** | **Socket.IO** | Enables low-latency, bi-directional communication between clients and the server.                       |
+| **Database** | **MongoDB** with **Mongoose** | A NoSQL database offering flexibility and scalability, with elegant object modeling.                    |
+| **Authentication** | **JSON Web Tokens (JWT)** | A compact, URL-safe standard for creating access tokens.                                                |
+| **Video Signaling** | **WebRTC** (via Socket.IO & Xirsys)         | Facilitates peer-to-peer connections for high-quality video and audio streaming.                        |
+| **Development Tools** | **tsx**, **ts-node-dev**, **dotenv** | Modern tools for a streamlined and efficient development workflow with TypeScript.                      |
 
 ---
 
 ## ⚙️ Getting Started
 
-### 1. Clone the repository
+Follow these steps to get the backend server running locally on your machine.
+
+### Prerequisites
+
+-   Node.js (v18.x or higher)
+-   MongoDB (local instance or a cloud URI)
+-   `pnpm` (or `npm`/`yarn`)
+
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Ridham-Savaliya/colloboartivex-backend.git
-cd whiteboard-backend
-```
-
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-### 3. Configure environment variables
-
-Create a `.env` file:
-
-```env
-PORT=5000
-MONGO_URI=your_mongo_connection_string
-EMAIL_USER=your_email@example.com
-EMAIL_PASS=your_email_password
-CLIENT_URL=http://localhost:3000
-```
-
-### 4. Run the server
-
-#### In development (with auto-reload)
-
-```bash
-npm run dev
-```
-
-#### In production
-
-```bash
-npm run build
-npm start
-```
-
----
-
-## 🔌 WebSocket Events
-
-| Event Name     | Description                      |
-| -------------- | -------------------------------- |
-| `join-room`    | User joins a specific whiteboard |
-| `sync-changes` | Broadcasts real-time updates     |
-| `draw-shape`   | Adds shapes via AI recognition   |
-| `disconnect`   | Handles user disconnect          |
-
----
-
-## 📬 API Endpoints (Example)
-
-| Method | Route            | Description               |
-| ------ | ---------------- | ------------------------- |
-| POST   | `/api/invite`    | Send invite email         |
-| GET    | `/api/board/:id` | Get whiteboard data       |
-| POST   | `/api/board`     | Create a new board        |
-| PUT    | `/api/board/:id` | Update whiteboard content |
-
----
-
-## 🚧 Upcoming Features
-
-- 🤖 AI-powered drawing tools (auto straighten, object detection)
-- 🔐 Auth system (JWT-based)
-- 💬 Chat and annotations
-- 🧠 More AI features with ML integration
-
----
-
-## 👨‍💼 Contributing
-
-PRs and feature suggestions are welcome! If you want to contribute:
-
-1. Fork the repo
-2. Create a branch: `git checkout -b new-feature`
-3. Commit your changes: `git commit -m "Added something"`
-4. Push to the branch: `git push origin new-feature`
-5. Submit a Pull Request
-
----
-
-## 📄 License
-
-This project is open-source and available under the [MIT License](LICENSE).
-
+git clone [https://github.com/Ridham-Savaliya/colloboartivex-backend.git](https://github.com/Ridham-Savaliya/colloboartivex-backend.git)
+cd colloboartivex-backend
