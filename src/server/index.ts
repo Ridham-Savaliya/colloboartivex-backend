@@ -18,7 +18,7 @@ app.use(cors({
   origin: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PATCH'],
   credentials: true
-}));  
+}));
 
 app.use('/ice-config', require('./routes/ice-config')); // Note: This line still uses require due to mixed module types
 
@@ -111,21 +111,40 @@ app.get('/health', (_, res) => {
   res.send('OK this is regular health check api route to warm out server on render to protect it from cold start❄️😅');
 });
 
+
+// Your healthcheck handler logic
+function runHealthcheck() {
+  const result = { status: "ok", time: new Date() };
+  console.log("🔄 Auto healthcheck:", result);
+  return result;
+}
+
+// Route
+app.get("/healthcheck", (req, res) => {
+  const result = runHealthcheck();
+  res.json(result);
+});
+
+// Auto-run every 10 min (without request)
+setInterval(() => {
+  runHealthcheck();
+}, 600000); // 10 min
+
+
+
 setInterval(async () => {
   try {
     const res = await fetch("https://collaborativex-whiteboard.vercel.app/api/healthcheck", {
       cache: "no-store" // ensures fresh response
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
+
     const data = await res.json();
     console.log("main-app health-check ✅:", data);
   } catch (err) {
     console.error("Keep-alive failed ❌:", err);
   }
-}, 5 * 60 * 1000); // 10 minutes
-
-
+}, 10 * 60 * 1000); // 10 minutes
 
 // Fallback route
 app.use((req, res) => {
