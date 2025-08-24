@@ -62,3 +62,33 @@ Follow these steps to get the backend server running locally on your machine.
 ```bash
 git clone [https://github.com/Ridham-Savaliya/colloboartivex-backend.git](https://github.com/Ridham-Savaliya/colloboartivex-backend.git)
 cd colloboartivex-backend
+🔌 API & Socket Architecture
+The backend is organized into namespaces to cleanly separate concerns between different real-time functionalities.
+
+🔮 /whiteboard: The main namespace for all whiteboard activities, handling drawings, notes, Kanban boards, and mind maps.
+
+🔮 /collaborate: Manages user presence and lobby synchronization.
+
+🔮 /video: Dedicated to the signaling logic for WebRTC video calls (join-room, start-call, signal, etc.).
+
+🤝 Contributing
+We welcome contributions of all kinds! If you're looking to help, please feel free to fork the repository, make your changes, and submit a pull request.
+
+Fork the repository.
+
+Create a new branch (git checkout -b feature/your-amazing-feature).
+
+Commit your changes (git commit -m 'Add some amazing feature').
+
+Push to the branch (git push origin feature/your-amazing-feature).
+
+Open a Pull Request.
+
+📄 License
+This project is open-source and available under the MIT License.
+
+<div align="center">
+
+Thank you for your interest in CollaborativeX. We're excited to see what we can build together!
+
+</div>
