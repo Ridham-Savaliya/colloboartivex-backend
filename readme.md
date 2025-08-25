@@ -23,9 +23,12 @@
 
 ---
 
-<p class='text-center'><a href="https://stats.uptimerobot.com/B2elwuqnhE/801232361" target="_blank">
-  <img src="https://img.shields.io/badge/uptime-check%20status-8200db?style=for-the-badge" alt="Uptime Status" />
-</a></p>
+<p align="center">
+  <a href="https://stats.uptimerobot.com/B2elwuqnhE/801232361" target="_blank">
+    <img src="https://img.shields.io/badge/uptime-check%20status-8200db?style=for-the-badge" alt="Uptime Status" />
+  </a>
+</p>
+
 
 ## 🛠️ Technology Stack
 
