@@ -1,0 +1,15 @@
+name: Keep Render Server Alive
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # every 5 minutes
+  workflow_dispatch: # allows you to run manually too
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl healthcheck endpoint
+        run: |
+          echo "Pinging server..."
+          curl -s -o /dev/null -w "%{http_code}" https://collaborativex-api.onrender.com/healthcheck
